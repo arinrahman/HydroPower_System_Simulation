@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tub Controls</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Link to styles.css -->
+</head>
+
+<body>
+    <h1 style="text-align: center">Reservoir Simulation</h1>
+    <div class="container">
+        <button id="dark-mode-toggle" class="btn btn-primary" value = "Click">Dark Mode</button>
+        <!-- Button for toggling dark mode -->
+        <div id="tub">
+            <div id="water" style="height: {{ water_level }}%; width: 100%;"></div>
+        </div>
+        <div class="controls">
+            <div class="energy-output">
+                <h4>Current Energy Output:</h4>
+                <p><span id="energy-output-value">0</span> kW</p>
+            </div>
+            <div class="time">
+                <h3>Time:</h3>
+                <p id="time-value">0 years, 0 days, 0 hours</p>
+            </div>
+            <h3>Controls</h3>
+            <form id="controls-form">
+                <label for="temperature">Temperature:</label>
+                <input type="range" id="temperature" name="temperature" min="0" max="100" value="{{ temperature }}">
+                <br>
+                <label for="release">Release:</label>
+                <input type="range" id="release" name="release" min="0" max="100" value="{{ release }}">
+                <br>
+                <label for="inflow">Inflow:</label>
+                <input type="range" id="inflow" name="inflow" min="0" max="100" value="{{ inflow }}">
+                <br>
+                <!-- <input type="button" id="submit-btn" value="Submit"> -->
+            </form>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html>
