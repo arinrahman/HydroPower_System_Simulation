@@ -8,7 +8,16 @@ $(document).ready(function () {
 
 
 $(document).ready(function () {
+    function updateRangeInputValue(inputId) {
+        var value = $('#' + inputId).val();
+        $('#' + inputId + '-value').text(value);
+    }
 
+    // Update range input values when user interacts with them
+    $('#temperature, #release, #inflow').on('input', function () {
+        updateRangeInputValue($(this).attr('id'));
+    });
+    
     $('#controls-form input[type=range]').change(function () {
         submitForm();
     });

@@ -18,7 +18,7 @@ release = 0
 inflow = 0
 
 # Creating reservoir
-reservoir = Reservoir(length,height,width,currHeight)
+reservoir = Reservoir(length,height,width,currHeight,temperature)
 
 @app.route('/toggle-dark-mode', methods=['POST'])
 def toggle_dark_mode():

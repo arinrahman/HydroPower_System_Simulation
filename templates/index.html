@@ -31,12 +31,15 @@
             <form id="controls-form">
                 <label for="temperature">Temperature:</label>
                 <input type="range" id="temperature" name="temperature" min="0" max="100" value="{{ temperature }}">
+                <span id="temperature-value">{{ temperature }}</span>
                 <br>
                 <label for="release">Release:</label>
                 <input type="range" id="release" name="release" min="0" max="100" value="{{ release }}">
+                <span id="release-value">{{ release }}</span>
                 <br>
                 <label for="inflow">Inflow:</label>
                 <input type="range" id="inflow" name="inflow" min="0" max="100" value="{{ inflow }}">
+                <span id="inflow-value">{{ inflow }}</span>
                 <br>
                 <!-- <input type="button" id="submit-btn" value="Submit"> -->
             </form>
