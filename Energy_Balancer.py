@@ -12,7 +12,7 @@ class Energy_Balancer:
     def update_energy(self,temp,flow):
         self.solar.update_energy(temp)
         self.turbine.update(flow)
-        self.power += self.turbine.get_output() + self.solar.get_output()
+        self.power = self.turbine.get_output() + self.solar.get_output()
         return self.power
 
     def get_energy_output(self):
