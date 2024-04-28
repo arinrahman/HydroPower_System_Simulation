@@ -1,10 +1,10 @@
+# Importing necessary modules
 from flask import Flask, render_template, session, request, jsonify
 from Reservoir import Reservoir
 import math
 
 app = Flask(__name__)
 app.secret_key = "something_random"
-
 
 # Initial values for reservoir parameters
 length = 5
@@ -19,6 +19,9 @@ inflow = 0
 
 # Creating reservoir
 reservoir = Reservoir(length,height,width,currHeight,temperature)
+
+# List to store water level data over time
+water_level_data = []
 
 @app.route('/toggle-dark-mode', methods=['POST'])
 def toggle_dark_mode():
@@ -47,7 +50,12 @@ def update():
         reservoir.inflow(inflow)
         reservoir.release(release)
         water_level = calculate_water_level(reservoir.current_volume,reservoir.max_volume)
+        water_level_data.append({'time': len(water_level_data), 'water_level': water_level, 'temperature': temperature}) # Add current water level and time to the data list
         return jsonify({'water_level': water_level})
+
+@app.route('/get_water_level_data', methods=['GET'])
+def get_water_level_data():
+    return jsonify(water_level_data)
 
 def calculate_water_level(current_volume,max_volume):
     water_level = math.floor((current_volume / max_volume) * 100)

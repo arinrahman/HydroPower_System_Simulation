@@ -5,11 +5,21 @@
 }
 
 #tub {
+    width: 90%;
+    height: 85%;
+    border: 1px solid black;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+#tub_Container{
     width: 80vw;
     height: 50vw;
     max-width: 500px;
     max-height: 300px;
-    border: 1px solid black;
     position: relative;
     overflow: hidden;
 }
@@ -33,7 +43,7 @@
         align-items: flex-start;
     }
 
-    #tub,
+    #tub_Container,
     .controls {
         width: 40%;
     }

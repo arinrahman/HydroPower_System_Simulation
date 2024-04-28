@@ -13,21 +13,28 @@
 <body>
     <h1 style="text-align: center">Reservoir Simulation</h1>
     <div class="container">
-        <button id="dark-mode-toggle" class="btn btn-primary" value = "Click">Dark Mode</button>
-        <!-- Button for toggling dark mode -->
+        <button id="dark-mode-toggle" class="btn btn-primary" value="Click">Dark Mode</button>
+        <div id = "tub_Container">
+        <h4 style="text-align: center">Reservoir Level</h4>
         <div id="tub">
             <div id="water" style="height: {{ water_level }}%; width: 100%;"></div>
         </div>
+        </div>
+        <div class="chart">
+            <h4 style = "text-align: center">Water Level Graph</h4>
+            <canvas id="lineChart" style="width: 100%; height: 400px;"></canvas>
+        </div>
+
         <div class="controls">
             <div class="energy-output">
-                <h4>Current Energy Output:</h4>
+                <h5>Current Energy Output:</h5>
                 <p><span id="energy-output-value">0</span> kW</p>
             </div>
             <div class="time">
-                <h3>Time:</h3>
+                <h5>Time:</h5>
                 <p id="time-value">0 years, 0 days, 0 hours</p>
             </div>
-            <h3>Controls</h3>
+            <h5>Controls:</h5>
             <form id="controls-form">
                 <label for="temperature">Temperature:</label>
                 <input type="range" id="temperature" name="temperature" min="0" max="100" value="{{ temperature }}">
@@ -41,12 +48,46 @@
                 <input type="range" id="inflow" name="inflow" min="0" max="100" value="{{ inflow }}">
                 <span id="inflow-value">{{ inflow }}</span>
                 <br>
-                <!-- <input type="button" id="submit-btn" value="Submit"> -->
             </form>
         </div>
     </div>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+
+        // Drawing the chart
+        const ctx = document.getElementById('lineChart').getContext('2d');
+        const myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Water Level',
+                        data: [],
+                        fill: false,
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Time (Hours)'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Percent Full',
+                            }
+                        }
+                    }
+                }
+            });
+    </script>
 </body>
 
 </html>

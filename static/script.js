@@ -47,16 +47,16 @@ $(document).ready(function () {
     }
 
     function updateEnergyOutput() {
-        // Ajax request to fetch energy output from the server
         $.ajax({
             type: 'GET',
             url: '/get_energy_output',
             success: function (data) {
-                // Update the energy output value in the HTML
-                $('.energy-output #energy-output-value').text(data.energy_output);
+                var formattedOutput = parseFloat(data.energy_output).toFixed(2);
+            
+                $('.energy-output #energy-output-value').text(formattedOutput);
+                updateChart(); 
             },
             error: function (xhr, status, error) {
-                // Handle errors if any
                 console.error(error);
             }
         });
@@ -81,3 +81,27 @@ function submitForm() {
         }
     });
 }
+
+function updateChart() {
+    $.ajax({
+        type: 'GET',
+        url: '/get_water_level_data',
+        success: function (data) {
+            var labels = [];
+            var values = [];
+
+            data.forEach(function (entry) {
+                labels.push(entry.time);
+                values.push(entry.water_level);
+            });
+
+            myChart.data.labels = labels;
+            myChart.data.datasets[0].data = values;
+            myChart.update();
+        },
+        error: function (xhr, status, error) {
+            console.error(error);
+        }
+    });
+}
+
