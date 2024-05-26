@@ -52,8 +52,12 @@ $(document).ready(function () {
             url: '/get_energy_output',
             success: function (data) {
                 var formattedOutput = parseFloat(data.energy_output).toFixed(2);
+                var solaroutput = parseFloat(data.solar_output).toFixed(2);
+                var hydroOutput = parseFloat(data.hydro_output).toFixed(2);
             
                 $('.energy-output #energy-output-value').text(formattedOutput);
+                $('.energy-output #solar-output-value').text(solaroutput);
+                $('.energy-output #hydro-output-value').text(hydroOutput);
                 updateChart(); 
             },
             error: function (xhr, status, error) {

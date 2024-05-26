@@ -13,6 +13,7 @@
 <body>
     <h1 style="text-align: center">Reservoir Simulation</h1>
     <div class="container">
+        <button id="graph-toggle" class="btn btn-primary" value="Click">Metrics</button>
         <button id="dark-mode-toggle" class="btn btn-primary" value="Click">Dark Mode</button>
         <div id = "tub_Container">
         <h4 style="text-align: center">Reservoir Level</h4>
@@ -27,8 +28,12 @@
 
         <div class="controls">
             <div class="energy-output">
-                <h5>Current Energy Output:</h5>
-                <p><span id="energy-output-value">0</span> kW</p>
+                <h6>Total Current Energy Output:</h6>
+                <p><span id="energy-output-value">0</span> kWh</p>
+                <h6>Solar Energy Output:</h6>
+                <p><span id="solar-output-value">0</span> kWh</p>
+                <h6>Hydro Energy Output:</h6>
+                <p><span id="hydro-output-value">0</span> kWh</p>
             </div>
             <div class="time">
                 <h5>Time:</h5>

@@ -18,3 +18,9 @@ class Energy_Balancer:
     def get_energy_output(self):
         return self.power
     
+    def get_solar_energy_output(self):
+        return self.solar.get_output()
+    
+    def get_hydro_energy_output(self):
+        return self.turbine.get_output()
+    

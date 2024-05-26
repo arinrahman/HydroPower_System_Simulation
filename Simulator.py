@@ -32,7 +32,9 @@ def toggle_dark_mode():
 def get_energy_output():
     # Get energy output from the reservoir
     energy_output = reservoir.energy_output()
-    return jsonify({'energy_output': energy_output})
+    solar_output = reservoir.energy_generation.get_solar_energy_output()
+    hydro_output = reservoir.energy_generation.get_hydro_energy_output()
+    return jsonify({'energy_output': energy_output, 'solar_output':solar_output, "hydro_output":hydro_output})
 
 @app.route('/', methods = ['GET','POST'])
 def index():

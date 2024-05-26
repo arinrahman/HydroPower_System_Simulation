@@ -59,6 +59,16 @@
     cursor: pointer;
 }
 
+#graph-toggle {
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    background-color: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+}
+
 body.dark-mode {
     background-color: #121212;
     color: #ffffff;
