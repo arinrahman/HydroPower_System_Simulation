@@ -1,3 +1,4 @@
+/* Light mode styles */
 .container {
     display: flex;
     flex-direction: column;
@@ -15,7 +16,7 @@
     justify-content: space-between;
 }
 
-#tub_Container{
+#tub_Container {
     width: 80vw;
     height: 50vw;
     max-width: 500px;
@@ -69,6 +70,17 @@
     cursor: pointer;
 }
 
+#home-toggle {
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    background-color: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+/* Dark mode styles */
 body.dark-mode {
     background-color: #121212;
     color: #ffffff;
@@ -78,7 +90,8 @@ body.dark-mode #tub {
     border-color: white;
 }
 
-.btn-primary,#dark-mode-toggle {
+.btn-primary,
+#dark-mode-toggle {
     background-color: blue !important;
     color: #ffffff !important;
 }

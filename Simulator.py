@@ -23,6 +23,17 @@ reservoir = Reservoir(length,height,width,currHeight,temperature)
 # List to store water level data over time
 water_level_data = []
 
+@app.route('/home')
+def home():
+    water_level = calculate_water_level(reservoir.current_volume,reservoir.max_volume)
+    dark_mode = session.get('dark_mode')
+    return render_template('index.html', temperature=temperature, release=release, inflow=inflow, water_level=water_level, dark_mode = dark_mode)
+
+@app.route('/metrics')
+def metrics():
+    dark_mode = session.get('dark_mode')
+    return render_template('metrics.html', dark_mode=dark_mode)
+
 @app.route('/toggle-dark-mode', methods=['POST'])
 def toggle_dark_mode():
     session['dark_mode'] = not session.get('dark_mode')
@@ -46,9 +57,9 @@ def index():
 def update():
     global temperature, release, inflow
     if request.method == 'POST':
-        temperature = int(request.form['temperature'])
-        release = int(request.form['release'])
-        inflow = int(request.form['inflow'])
+        temperature = int(request.form['temperature']) if request.form else temperature
+        release = int(request.form['release']) if request.form else release
+        inflow = int(request.form['inflow']) if request.form else inflow
         reservoir.inflow(inflow)
         reservoir.release(release)
         water_level = calculate_water_level(reservoir.current_volume,reservoir.max_volume)
