@@ -19,8 +19,8 @@
         <button id="home-toggle" class="btn btn-primary" value="Click">Home</button>
         <button id="dark-mode-toggle" class="btn btn-primary" value="Click">Dark Mode</button>
         <div class="chart">
-            <h4 style="text-align: center">Water Level Graph</h4>
-            <canvas id="lineChart" class="line-chart"></canvas>
+            <h4 style="text-align: center">Power Graph</h4>
+            <canvas id="lineChart1" class="line-chart"></canvas>
         </div>
         <div class="chart">
             <h4 style="text-align: center">Hydro Power Graph</h4>
@@ -42,8 +42,8 @@
             });
         });
         // Drawing the charts
-        const ctx1 = document.getElementById('lineChart').getContext('2d');
-        const myChart = new Chart(ctx1, {
+        const ctx1 = document.getElementById('lineChart1').getContext('2d');
+        const myChart1 = new Chart(ctx1, {
             type: 'line',
             data: {
                 labels: [],
@@ -66,7 +66,7 @@
                     y: {
                         title: {
                             display: true,
-                            text: 'Percent Full',
+                            text: 'Power (kWh)',
                         }
                     }
                 }
@@ -97,7 +97,7 @@
                     y: {
                         title: {
                             display: true,
-                            text: 'Percent Full',
+                            text: 'Power (kWh)',
                         }
                     }
                 }
@@ -128,7 +128,7 @@
                     y: {
                         title: {
                             display: true,
-                            text: 'Percent Full',
+                            text: 'Power (kWh)',
                         }
                     }
                 }

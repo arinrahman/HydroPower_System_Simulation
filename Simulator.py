@@ -22,6 +22,9 @@ reservoir = Reservoir(length,height,width,currHeight,temperature)
 
 # List to store water level data over time
 water_level_data = []
+hydro_power_data = []
+solar_power_data = []
+general_power_data = []
 
 @app.route('/home')
 def home():
@@ -45,7 +48,7 @@ def get_energy_output():
     energy_output = reservoir.energy_output()
     solar_output = reservoir.energy_generation.get_solar_energy_output()
     hydro_output = reservoir.energy_generation.get_hydro_energy_output()
-    return jsonify({'energy_output': energy_output, 'solar_output':solar_output, "hydro_output":hydro_output})
+    return jsonify({'general_power_out':general_power_data, 'hydro_power_out':hydro_power_data, 'solar_power_out': solar_power_data, 'energy_output': energy_output, 'solar_output':solar_output, "hydro_output":hydro_output})
 
 @app.route('/', methods = ['GET','POST'])
 def index():
@@ -60,10 +63,16 @@ def update():
         temperature = int(request.form['temperature']) if request.form else temperature
         release = int(request.form['release']) if request.form else release
         inflow = int(request.form['inflow']) if request.form else inflow
+        hydro_power = reservoir.energy_generation.get_hydro_energy_output()
+        solar_power = reservoir.energy_generation.get_solar_energy_output()
+        energy_output = reservoir.energy_output()
         reservoir.inflow(inflow)
         reservoir.release(release)
         water_level = calculate_water_level(reservoir.current_volume,reservoir.max_volume)
-        water_level_data.append({'time': len(water_level_data), 'water_level': water_level, 'temperature': temperature}) # Add current water level and time to the data list
+        water_level_data.append({'time': len(water_level_data), 'water_level': water_level, 'temperature': temperature})
+        hydro_power_data.append({'time': len(hydro_power_data), 'hydro_power': hydro_power})
+        solar_power_data.append({'time': len(solar_power_data), 'solar_power': solar_power})
+        general_power_data.append({'time': len(general_power_data), 'energy_output': energy_output})
         return jsonify({'water_level': water_level})
 
 @app.route('/get_water_level_data', methods=['GET'])
