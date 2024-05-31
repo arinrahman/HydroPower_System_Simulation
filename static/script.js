@@ -14,7 +14,7 @@ $(document).ready(function () {
     }
 
     // Update range input values when user interacts with them
-    $('#temperature, #release, #inflow').on('input', function () {
+    $('#temperature, #release, #inflow, #solar').on('input', function () {
         updateRangeInputValue($(this).attr('id'));
     });
     

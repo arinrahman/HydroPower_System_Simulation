@@ -16,6 +16,7 @@ currHeight = 0
 temperature = 0
 release = 0
 inflow = 0
+solar = 0
 
 # Creating reservoir
 reservoir = Reservoir(length,height,width,currHeight,temperature)
@@ -30,7 +31,7 @@ general_power_data = []
 def home():
     water_level = calculate_water_level(reservoir.current_volume,reservoir.max_volume)
     dark_mode = session.get('dark_mode')
-    return render_template('index.html', temperature=temperature, release=release, inflow=inflow, water_level=water_level, dark_mode = dark_mode)
+    return render_template('index.html', temperature=temperature, release=release, inflow=inflow, water_level=water_level, dark_mode = dark_mode, solar = solar)
 
 @app.route('/metrics')
 def metrics():
@@ -54,15 +55,17 @@ def get_energy_output():
 def index():
     water_level = calculate_water_level(reservoir.current_volume,reservoir.max_volume)
     dark_mode = session.get('dark_mode')
-    return render_template('index.html', temperature=temperature, release=release, inflow=inflow, water_level=water_level, dark_mode = dark_mode)
+    return render_template('index.html', temperature=temperature, release=release, inflow=inflow, water_level=water_level, dark_mode = dark_mode, solar=solar)
 
 @app.route('/update', methods=['POST'])
 def update():
-    global temperature, release, inflow
+    global temperature, release, inflow, solar
     if request.method == 'POST':
         temperature = int(request.form['temperature']) if request.form else temperature
         release = int(request.form['release']) if request.form else release
         inflow = int(request.form['inflow']) if request.form else inflow
+        solar = int(request.form['solar']) if request.form else solar
+        reservoir.energy_generation.update_panel_amount(solar,length * width)
         hydro_power = reservoir.energy_generation.get_hydro_energy_output()
         solar_power = reservoir.energy_generation.get_solar_energy_output()
         energy_output = reservoir.energy_output()

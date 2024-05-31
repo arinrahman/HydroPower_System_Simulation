@@ -24,3 +24,7 @@ class Energy_Balancer:
     def get_hydro_energy_output(self):
         return self.turbine.get_output()
     
+    def update_panel_amount(self, percent, alloted):
+        # L = 69, W = 39, Area = 2535 per solar panel
+        self.solar.panels = (alloted * percent) // 2535
+    
