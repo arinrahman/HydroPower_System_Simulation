@@ -1,7 +1,9 @@
 # Importing necessary modules
+# -------- Version using random data --------
 from flask import Flask, render_template, session, request, jsonify
 from Reservoir import Reservoir
 import math
+import random
 
 app = Flask(__name__)
 app.secret_key = "something_random"
@@ -61,21 +63,23 @@ def index():
 def update():
     global temperature, release, inflow, solar
     if request.method == 'POST':
-        temperature = int(request.form['temperature']) if request.form else temperature
-        release = int(request.form['release']) if request.form else release
-        inflow = int(request.form['inflow']) if request.form else inflow
-        solar = int(request.form['solar']) if request.form else solar
-        reservoir.energy_generation.update_panel_amount(solar,length * width)
-        hydro_power = reservoir.energy_generation.get_hydro_energy_output()
-        solar_power = reservoir.energy_generation.get_solar_energy_output()
-        energy_output = reservoir.energy_output()
-        reservoir.inflow(inflow)
-        reservoir.release(release)
-        water_level = calculate_water_level(reservoir.current_volume,reservoir.max_volume)
-        water_level_data.append({'time': len(water_level_data), 'water_level': water_level, 'temperature': temperature})
-        hydro_power_data.append({'time': len(hydro_power_data), 'hydro_power': hydro_power})
-        solar_power_data.append({'time': len(solar_power_data), 'solar_power': solar_power})
-        general_power_data.append({'time': len(general_power_data), 'energy_output': energy_output})
+        num_values = 10
+        temperature = [random.randint(0, 100) for _ in range(num_values)]
+        release = [random.randint(0, 100) for _ in range(num_values)]
+        inflow = [random.randint(0, 100) for _ in range(num_values)]
+        solar = [random.randint(0, 100) for _ in range(num_values)]
+        for i in range(num_values):
+            reservoir.energy_generation.update_panel_amount(solar[i], length * width)
+            hydro_power = reservoir.energy_generation.get_hydro_energy_output()
+            solar_power = reservoir.energy_generation.get_solar_energy_output()
+            energy_output = reservoir.energy_output()
+            reservoir.inflow(inflow[i])
+            reservoir.release(release[i])
+            water_level = calculate_water_level(reservoir.current_volume, reservoir.max_volume)
+            water_level_data.append({'time': len(water_level_data), 'water_level': water_level, 'temperature': temperature[i]})
+            hydro_power_data.append({'time': len(hydro_power_data), 'hydro_power': hydro_power})
+            solar_power_data.append({'time': len(solar_power_data), 'solar_power': solar_power})
+            general_power_data.append({'time': len(general_power_data), 'energy_output': energy_output})
         return jsonify({'water_level': water_level})
 
 @app.route('/get_water_level_data', methods=['GET'])
@@ -85,7 +89,6 @@ def get_water_level_data():
 def calculate_water_level(current_volume,max_volume):
     water_level = math.floor((current_volume / max_volume) * 100)
     water_level = max(0, min(100, water_level))
-    print(water_level, max_volume, current_volume)
     return water_level
 
 if __name__ == '__main__':
