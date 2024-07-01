@@ -2,26 +2,32 @@
 # -------- Version using random data --------
 from flask import Flask, render_template, session, request, jsonify
 from Reservoir import Reservoir
+from Ingestor import Ingestor
 import math
 import random
 
 app = Flask(__name__)
 app.secret_key = "something_random"
 
+# Amnistad Output Data location
+amnistadRelease = 'DataSetExport-Discharge Total.Last-24-Hour-Change-in-Storage@08450800-Instantaneous-TCM-20240622194957.csv' 
+amnistadInitialLevel = 'DataSetExport-Total Storage.Web-Daily-tcm@08450800-Instantaneous-TCM-20240622210630.csv'
+
+# Level Metrics
+reservoirMetrics = Ingestor(amnistadInitialLevel)
+
 # Initial values for reservoir parameters
-length = 5
-width = 10
-height = 5
-currHeight = 0
+maxVolume = max(entry['Value'] for entry in reservoirMetrics.data)
+currVolume = reservoirMetrics.data[-1]["Value"]
 
 # Inital values for controlled variables
-temperature = 0
+temperature = 79.5 # Found in https://waterdata.ibwc.gov/AQWebportal/Data/DataSet/Chart/Location/08374500/DataSet/Water%20Temp/Field%20Visits/Interval/Latest 
 release = 0
 inflow = 0
 solar = 0
 
 # Creating reservoir
-reservoir = Reservoir(length,height,width,currHeight,temperature)
+reservoir = Reservoir(maxVolume,currVolume,temperature)
 
 # List to store water level data over time
 water_level_data = []
@@ -63,13 +69,13 @@ def index():
 def update():
     global temperature, release, inflow, solar
     if request.method == 'POST':
-        num_values = 10
-        temperature = [random.randint(0, 100) for _ in range(num_values)]
-        release = [random.randint(0, 100) for _ in range(num_values)]
-        inflow = [random.randint(0, 100) for _ in range(num_values)]
-        solar = [random.randint(0, 100) for _ in range(num_values)]
+        release = [entry['Value'] for entry in Ingestor(amnistadRelease).data]
+        num_values = len(release)
+        temperature = [79.5 for _ in range(num_values)]
+        inflow = [random.randint(0, 4000) for _ in range(num_values)]
+        solar = [random.randint(0, 100) for _ in range(num_values)] # Adjust based on the % you want to fill of the Reservoir.
         for i in range(num_values):
-            reservoir.energy_generation.update_panel_amount(solar[i], length * width)
+            reservoir.energy_generation.update_panel_amount(solar[i], maxVolume)
             hydro_power = reservoir.energy_generation.get_hydro_energy_output()
             solar_power = reservoir.energy_generation.get_solar_energy_output()
             energy_output = reservoir.energy_output()

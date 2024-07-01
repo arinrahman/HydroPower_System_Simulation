@@ -31,17 +31,13 @@ $(document).ready(function () {
     var hours = parseInt(localStorage.getItem('hours')) || 0;
 
     function updateTime() {
-        hours++;
-        if (hours >= 24) {
-            days++;
-            hours = 0;
-        }
+        days++;
         if (days >= 365) {
             years++;
             days = 0;
         }
 
-        $('.time #time-value').text(years + ' years, ' + days + ' days, ' + hours + ' hours');
+        $('.time #time-value').text(years + ' years, ' + days + ' days');
 
         // Store updated values in localStorage
         localStorage.setItem('years', years);

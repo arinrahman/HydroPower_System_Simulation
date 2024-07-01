@@ -2,12 +2,8 @@ from Energy_Balancer import Energy_Balancer
 
 class Reservoir:
 
-    def __init__(self, length, width, height, current_volume, temperature):
-        self.length = length
-        self.width = width
-        self.height = height
-        self.max_volume = length * width * height
-        #self.area = length * width
+    def __init__(self, max_volume, current_volume, temperature):
+        self.max_volume = max_volume
         self.current_volume = current_volume
         self.energy_generation = Energy_Balancer()
         self.temperature = temperature
@@ -18,7 +14,7 @@ class Reservoir:
     
     def inflow(self, inflow_amount):
         self.current_volume = min(self.max_volume,self.current_volume + inflow_amount)
-        self.energy_generation.update_energy(self.temperature,inflow_amount)
+        #self.energy_generation.update_energy(self.temperature,inflow_amount)
 
     def energy_output(self):
         return self.energy_generation.get_energy_output()
