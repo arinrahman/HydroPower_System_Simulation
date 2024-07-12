@@ -1,7 +1,7 @@
 # HydroPower_System_Simulation
 This git repository simulates a comprehensive hydropower system, including the influence of various factors on a single reservoir. It's designed as a scalable model, meaning its behavior adapts based on different input measurements. Future enhancements will allow it to simulate multiple interconnected reservoirs. In addition, the simulation will use Machine Learning methods in order to approximate optimial release patterns to maximize the energy output of the system. 
 
-<strong>Long Short Term Memory (LSTM) Model Description<Strong>
+# Long Short Term Memory (LSTM) Model Description
 
 The LSTM Model begins by importing the necessary libraries such as tensorFlow, Pandas, Sklearn and Numpy to name a few. It then ingest data from a premade CSV containing discharge total changes over time obtained from the International Boundary and Water Commission (IBWC). The data is then processed into a Pandas DataFrame to allow easy mutability, with timestamps converted to a datetime format and set as the index. Next we normalize the 'Value' column using a MinMaxScaler and create sequences of data for training. The current LSTM model is defined with two LSTM layers and one output Dense layer. This is subject to change as this model is only the first iteration. However, after compiling the model with the Adam optimizer and mean squared error loss, the data is split between training and testing sets for which the model is trained for 50 epochs (Also subject to change) and predicts based on the time series. Lastly, we evaluate the performance using mean squared error and mean absolute error which will later grow in differnt performance measures.
 
