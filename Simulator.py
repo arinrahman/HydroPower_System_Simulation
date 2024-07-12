@@ -72,7 +72,7 @@ def update():
         release = [entry['Value'] for entry in Ingestor(amnistadRelease).data]
         num_values = len(release)
         temperature = [79.5 for _ in range(num_values)]
-        inflow = [random.randint(0, 4000) for _ in range(num_values)]
+        inflow = [random.randint(0, 4100) for _ in range(num_values)]
         solar = [random.randint(0, 100) for _ in range(num_values)] # Adjust based on the % you want to fill of the Reservoir.
         for i in range(num_values):
             reservoir.energy_generation.update_panel_amount(solar[i], maxVolume)
