@@ -6,6 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 
 amnistadRelease = 'DataSetExport-Discharge Total.Last-24-Hour-Change-in-Storage@08450800-Instantaneous-TCM-20240622194957.csv' 
 
@@ -54,7 +55,6 @@ predictions = scaler.inverse_transform(predictions)
 
 y_test = scaler.inverse_transform(y_test.reshape(-1, 1))
 
-from sklearn.metrics import mean_squared_error, mean_absolute_error
 mse = mean_squared_error(y_test, predictions)
 print(f'Mean Squared Error: {mse}')
 
