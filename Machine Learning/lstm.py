@@ -22,7 +22,6 @@ df.set_index('Timestamp', inplace=True)
 scaler = MinMaxScaler()
 scaled_data = scaler.fit_transform(df[['Value']])
 
-# Function to create sequences
 def create_sequences(data, seq_length):
     sequences = []
     for i in range(len(data) - seq_length):
@@ -31,24 +30,18 @@ def create_sequences(data, seq_length):
     return np.array(sequences)
 
 def predict_with_custom_value(timestamp, value, scaler, model, seq_length):
-    # Convert the input timestamp to datetime if necessary (here it's optional for future use)
     timestamp = pd.to_datetime(timestamp)
     
-    # Scale the custom value
     scaled_value = scaler.transform(np.array([[value]]))
 
     last_sequence = scaled_data[-(seq_length - 1):]
 
-    # Append the new scaled value to form a sequence of length `seq_length`
     custom_sequence = np.append(last_sequence, scaled_value).reshape((1, seq_length, 1))
 
-    # Make prediction
     prediction = model.predict(custom_sequence)
 
-    # Inverse transform the prediction to get the actual value
     actual_prediction = scaler.inverse_transform(prediction)
     
-    # Print out the prediction
     print(f"Prediction for the next time step after {timestamp} with input value {value}: {actual_prediction[0][0]}")
     return actual_prediction[0][0]
 
@@ -65,7 +58,6 @@ model = Sequential([
     Dense(1)
 ])
 
-# Compile the model
 optimizer = Adam(learning_rate=0.001)
 model.compile(optimizer=optimizer, loss='mean_squared_error')
 
@@ -84,14 +76,14 @@ X_train = X_train.reshape((X_train.shape[0], X_train.shape[1], 1))
 X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], 1))
 
 # Train the model
-model.fit(X_train, y_train, epochs=75, batch_size=2, validation_data=(X_test, y_test))
+model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
 
 # Make predictions for the test set
 predictions = model.predict(X_test)
 predictions = predictions.reshape(-1, 1)
 predictions = scaler.inverse_transform(predictions)
 
-# Inverse transform y_test
+# Inverse transform y_test back to original values
 y_test = scaler.inverse_transform(y_test.reshape(-1, 1))
 
 # Calculate and print metrics
@@ -102,33 +94,27 @@ mae = mean_absolute_error(y_test, predictions)
 print(f'Mean Absolute Error: {mae}')
 
 # Custom prediction
-custom_timestamp = '2024-06-20 12:00:00'  # Replace with your timestamp
+custom_timestamp = '2024-06-20 12:00:00'
 custom_value = 270.8
 predicted_custom_value = predict_with_custom_value(custom_timestamp, custom_value, scaler, model, seq_length)
 
-# Convert custom timestamp to datetime if it's not already
 custom_timestamp = pd.to_datetime(custom_timestamp)
 
-# Extract the timestamps for the test data
 test_timestamps = df.index[train_size + seq_length:]
 
-# Plot the actual and predicted values
+# Config plot
 plt.figure(figsize=(12, 6))
 
-# Plot the actual test set values
 plt.plot(test_timestamps, y_test, label='Actual')
 
-# Plot the predicted test set values
 plt.plot(test_timestamps, predictions, label='Predicted')
 
-# Add the custom predicted value as a red dot on the graph
 plt.scatter([custom_timestamp], [predicted_custom_value], color='red', label='Custom Prediction', zorder=5)
 
-# Customize the plot
 plt.xlabel('Timestamp')
 plt.ylabel('Value')
 plt.title('Actual vs Predicted Values Over Time (Including Custom Prediction)')
-plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+plt.xticks(rotation=45)
 plt.legend()
-plt.tight_layout()  # Adjust the layout to prevent clipping
+plt.tight_layout()
 plt.show()
