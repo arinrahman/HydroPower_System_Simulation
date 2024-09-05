@@ -14,7 +14,8 @@ amnistadRelease = 'DataSetExport-Discharge Total.Last-24-Hour-Change-in-Storage@
 data = Ingestor(amnistadRelease).data
 df = pd.DataFrame(data)
 
-# Convert 'Timestamp' to datetime and set as index
+# Convert 'Timestamp' to datetime and set as index 
+# TODO: Slightly Shift Values to better fit
 df['Timestamp'] = pd.to_datetime(df['Timestamp'])
 df.set_index('Timestamp', inplace=True)
 
@@ -94,8 +95,8 @@ mae = mean_absolute_error(y_test, predictions)
 print(f'Mean Absolute Error: {mae}')
 
 # Custom prediction
-custom_timestamp = '2024-06-20 12:00:00'
-custom_value = 270.8
+custom_timestamp = '2024-06-20 11:45:00'
+custom_value = 406.0
 predicted_custom_value = predict_with_custom_value(custom_timestamp, custom_value, scaler, model, seq_length)
 
 custom_timestamp = pd.to_datetime(custom_timestamp)
