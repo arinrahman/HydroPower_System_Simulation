@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, SimpleRNN, Dense, Dropout
+from tensorflow.keras.layers import LSTM, SimpleRNN, Dense, Dropout, Bidirectional
 from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import os
@@ -48,10 +48,6 @@ def predict_with_custom_value(timestamp, value, scaler, model, seq_length):
     return actual_prediction[0][0]
 
 def create_sequences_shift_left(data, seq_length, shift=1):
-    """
-    Creates sequences and shifts the target (y) by `shift` steps to the left.
-    The `shift` value determines how far back the target value will be.
-    """
     sequences = []
     targets = []
     
@@ -76,7 +72,7 @@ train_size = int(len(X) * 0.8)
 X_train, y_train = X[:train_size], y[:train_size]
 X_test, y_test = X[train_size:], y[train_size:]
 
-# Reshape for LSTM and RNN
+# Reshape for LSTM, RNN, and Bidirectional RNN
 X_train = X_train.reshape((X_train.shape[0], X_train.shape[1], 1))
 X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], 1))
 
@@ -108,6 +104,20 @@ rnn_model.compile(optimizer=rnn_optimizer, loss='mean_squared_error')
 
 rnn_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
 
+# Define and train Bidirectional RNN model
+bidirectional_rnn_model = Sequential([
+    Bidirectional(SimpleRNN(50, return_sequences=True), input_shape=(seq_length, 1)),
+    Dropout(0.2),
+    Bidirectional(SimpleRNN(50)),
+    Dropout(0.2),
+    Dense(1)
+])
+
+bidirectional_rnn_optimizer = Adam(learning_rate=0.001)
+bidirectional_rnn_model.compile(optimizer=bidirectional_rnn_optimizer, loss='mean_squared_error')
+
+bidirectional_rnn_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
+
 # Define and train Basic Neural Network model
 # Flatten X_train and X_test for Dense model
 X_train_dense = X_train.reshape((X_train.shape[0], -1))  # Flatten the sequence
@@ -136,6 +146,11 @@ rnn_predictions = rnn_model.predict(X_test)
 rnn_predictions = rnn_predictions.reshape(-1, 1)
 rnn_predictions = scaler.inverse_transform(rnn_predictions)
 
+# Make predictions for the test set with Bidirectional RNN model
+bidirectional_rnn_predictions = bidirectional_rnn_model.predict(X_test)
+bidirectional_rnn_predictions = bidirectional_rnn_predictions.reshape(-1, 1)
+bidirectional_rnn_predictions = scaler.inverse_transform(bidirectional_rnn_predictions)
+
 # Make predictions for the test set with Dense model
 dense_predictions = dense_model.predict(X_test_dense)
 dense_predictions = dense_predictions.reshape(-1, 1)
@@ -158,6 +173,13 @@ print(f'RNN Mean Squared Error: {rnn_mse}')
 rnn_mae = mean_absolute_error(y_test, rnn_predictions)
 print(f'RNN Mean Absolute Error: {rnn_mae}')
 
+# Calculate and print metrics for Bidirectional RNN model
+bidirectional_rnn_mse = mean_squared_error(y_test, bidirectional_rnn_predictions)
+print(f'Bidirectional RNN Mean Squared Error: {bidirectional_rnn_mse}')
+
+bidirectional_rnn_mae = mean_absolute_error(y_test, bidirectional_rnn_predictions)
+print(f'Bidirectional RNN Mean Absolute Error: {bidirectional_rnn_mae}')
+
 # Calculate and print metrics for Dense model
 dense_mse = mean_squared_error(y_test, dense_predictions)
 print(f'Dense Mean Squared Error: {dense_mse}')
@@ -172,11 +194,15 @@ lstm_average_gap = np.mean(lstm_absolute_errors)
 rnn_absolute_errors = np.abs(y_test - rnn_predictions)
 rnn_average_gap = np.mean(rnn_absolute_errors)
 
+bidirectional_rnn_absolute_errors = np.abs(y_test - bidirectional_rnn_predictions)
+bidirectional_rnn_average_gap = np.mean(bidirectional_rnn_absolute_errors)
+
 dense_absolute_errors = np.abs(y_test - dense_predictions)
 dense_average_gap = np.mean(dense_absolute_errors)
 
 print(f'LSTM Average Gap: {lstm_average_gap}')
 print(f'RNN Average Gap: {rnn_average_gap}')
+print(f'Bidirectional RNN Average Gap: {bidirectional_rnn_average_gap}')
 print(f'Dense Average Gap: {dense_average_gap}')
 
 # Custom prediction
@@ -184,6 +210,7 @@ custom_timestamp = '2024-06-21 19:30:00'
 custom_value = 406.8
 predicted_custom_value_lstm = predict_with_custom_value(custom_timestamp, custom_value, scaler, lstm_model, seq_length)
 predicted_custom_value_rnn = predict_with_custom_value(custom_timestamp, custom_value, scaler, rnn_model, seq_length)
+predicted_custom_value_bidirectional_rnn = predict_with_custom_value(custom_timestamp, custom_value, scaler, bidirectional_rnn_model, seq_length)
 
 # Prepare input for Dense model
 # Use the last sequence and append the scaled custom value
@@ -210,11 +237,28 @@ plt.figure(figsize=(14, 7))
 plt.plot(test_timestamps, y_test, label='Actual', color='black')
 plt.plot(test_timestamps, lstm_predictions, label='LSTM Predicted', color='blue')
 plt.plot(test_timestamps, rnn_predictions, label='RNN Predicted', color='orange')
+plt.plot(test_timestamps, bidirectional_rnn_predictions, label='Bidirectional RNN Predicted', color='purple')
 plt.plot(test_timestamps, dense_predictions, label='Dense Predicted', color='green')
 
-plt.scatter([custom_timestamp], [predicted_custom_value_lstm], color='red', label='LSTM Custom Prediction', zorder=5)
-plt.scatter([custom_timestamp], [predicted_custom_value_rnn], color='purple', label='RNN Custom Prediction', zorder=5)
-plt.scatter([custom_timestamp], [predicted_custom_value_dense], color='blue', label='Dense Custom Prediction', zorder=5)
+plt.xlabel('Timestamp')
+plt.ylabel('Value')
+plt.title('Prediction vs Actual Values')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Ensure residuals (errors) for each model are calculated as 1D arrays
+lstm_errors = y_test - lstm_predictions.reshape(-1)
+rnn_errors = y_test - rnn_predictions.reshape(-1)
+bidirectional_rnn_errors = y_test - bidirectional_rnn_predictions.reshape(-1)
+dense_errors = y_test - dense_predictions.reshape(-1)
+
+# Check that test_timestamps matches the number of residuals
+if len(test_timestamps) != len(lstm_errors):
+    raise ValueError(f"Mismatch between number of timestamps ({len(test_timestamps)}) and errors ({len(lstm_errors)})")
+
+# Plot the errors (residuals) over time
+plt.figure(figsize=(14, 7))
 
 plt.text(
     0.02, 0.95, 
@@ -236,6 +280,15 @@ plt.text(
 
 plt.text(
     0.02, 0.85, 
+    f'Bidirectional RNN Average Gap: {bidirectional_rnn_average_gap:.2f}', 
+    transform=plt.gca().transAxes, 
+    fontsize=12,
+    verticalalignment='top',
+    bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
+)
+
+plt.text(
+    0.02, 0.80, 
     f'Dense Average Gap: {dense_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
@@ -243,27 +296,9 @@ plt.text(
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
-plt.xlabel('Timestamp')
-plt.ylabel('Value')
-plt.title('Prediction vs Actual Values')
-plt.legend()
-plt.grid(True)
-plt.show()
-
-# Ensure residuals (errors) for each model are calculated as 1D arrays
-lstm_errors = y_test - lstm_predictions.reshape(-1)
-rnn_errors = y_test - rnn_predictions.reshape(-1)
-dense_errors = y_test - dense_predictions.reshape(-1)
-
-# Check that test_timestamps matches the number of residuals
-if len(test_timestamps) != len(lstm_errors):
-    raise ValueError(f"Mismatch between number of timestamps ({len(test_timestamps)}) and errors ({len(lstm_errors)})")
-
-# Plot the errors (residuals) over time
-plt.figure(figsize=(14, 7))
-
 plt.plot(test_timestamps, lstm_errors, label='LSTM Error', color='blue')
 plt.plot(test_timestamps, rnn_errors, label='RNN Error', color='orange')
+plt.plot(test_timestamps, bidirectional_rnn_errors, label='Bidirectional RNN Error', color='purple')
 plt.plot(test_timestamps, dense_errors, label='Dense Error', color='green')
 
 plt.axhline(0, color='black', linestyle='--')  # Add a horizontal line at y=0 for reference
