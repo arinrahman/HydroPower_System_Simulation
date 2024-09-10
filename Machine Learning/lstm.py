@@ -8,6 +8,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, SimpleRNN, Dense, Dropout
 from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 
 # Load and preprocess data
 amnistadRelease = 'DataSetExport-Discharge Total.Last-24-Hour-Change-in-Storage@08450800-Instantaneous-TCM-20240622194957.csv'
@@ -45,19 +47,34 @@ def predict_with_custom_value(timestamp, value, scaler, model, seq_length):
     print(f"Prediction for the next time step after {timestamp} with input value {value}: {actual_prediction[0][0]}")
     return actual_prediction[0][0]
 
-# Define sequence length and create sequences
+def create_sequences_shift_left(data, seq_length, shift=1):
+    """
+    Creates sequences and shifts the target (y) by `shift` steps to the left.
+    The `shift` value determines how far back the target value will be.
+    """
+    sequences = []
+    targets = []
+    
+    for i in range(len(data) - seq_length - shift):
+        sequence = data[i:i + seq_length]
+        target = data[i + seq_length - shift]  # Shift the target
+        sequences.append(sequence)
+        targets.append(target)
+    
+    return np.array(sequences), np.array(targets)
+
+
+# Define sequence length and shift
 seq_length = 3
-sequences = create_sequences(scaled_data, seq_length)
+shift = 1  # This will shift the target by one step to the left
 
-# Split data into training and testing sets
-train_size = int(len(sequences) * 0.8)
-train_sequences = sequences[:train_size]
-test_sequences = sequences[train_size:]
+# Create sequences with shifted target
+X, y = create_sequences_shift_left(scaled_data, seq_length, shift)
 
-X_train = train_sequences[:, :-1]
-y_train = train_sequences[:, -1]
-X_test = test_sequences[:, :-1]
-y_test = test_sequences[:, -1]
+# Split into train and test sets
+train_size = int(len(X) * 0.8)
+X_train, y_train = X[:train_size], y[:train_size]
+X_test, y_test = X[train_size:], y[train_size:]
 
 # Reshape for LSTM and RNN
 X_train = X_train.reshape((X_train.shape[0], X_train.shape[1], 1))
@@ -163,8 +180,8 @@ print(f'RNN Average Gap: {rnn_average_gap}')
 print(f'Dense Average Gap: {dense_average_gap}')
 
 # Custom prediction
-custom_timestamp = '2024-06-20 11:45:00'
-custom_value = 406.0
+custom_timestamp = '2024-06-21 19:30:00'
+custom_value = 406.8
 predicted_custom_value_lstm = predict_with_custom_value(custom_timestamp, custom_value, scaler, lstm_model, seq_length)
 predicted_custom_value_rnn = predict_with_custom_value(custom_timestamp, custom_value, scaler, rnn_model, seq_length)
 
@@ -185,7 +202,8 @@ predicted_custom_value_dense = scaler.inverse_transform(predicted_custom_value_d
 custom_timestamp = pd.to_datetime(custom_timestamp)
 
 # Plot results
-test_timestamps = df.index[train_size + seq_length:]
+test_timestamps = df.index[train_size + seq_length + shift - 1 : train_size + seq_length + shift - 1 + len(y_test)]
+y_test = y_test.reshape(-1)
 
 plt.figure(figsize=(14, 7))
 
@@ -194,10 +212,10 @@ plt.plot(test_timestamps, lstm_predictions, label='LSTM Predicted', color='blue'
 plt.plot(test_timestamps, rnn_predictions, label='RNN Predicted', color='orange')
 plt.plot(test_timestamps, dense_predictions, label='Dense Predicted', color='green')
 
-#plt.scatter([custom_timestamp], [predicted_custom_value_lstm], color='red', label='LSTM Custom Prediction', zorder=5)
-#plt.scatter([custom_timestamp], [predicted_custom_value_rnn], color='purple', label='RNN Custom Prediction', zorder=5)
-#plt.scatter([custom_timestamp], [predicted_custom_value_dense], color='blue', label='Dense Custom Prediction', zorder=5)
-
+plt.scatter([custom_timestamp], [predicted_custom_value_lstm], color='red', label='LSTM Custom Prediction', zorder=5)
+plt.scatter([custom_timestamp], [predicted_custom_value_rnn], color='purple', label='RNN Custom Prediction', zorder=5)
+plt.scatter([custom_timestamp], [predicted_custom_value_dense], color='blue', label='Dense Custom Prediction', zorder=5)
+'''
 plt.text(
     0.02, 0.95, 
     f'LSTM Average Gap: {lstm_average_gap:.2f}', 
@@ -224,7 +242,7 @@ plt.text(
     verticalalignment='top',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
-
+'''
 plt.xlabel('Timestamp')
 plt.ylabel('Value')
 plt.title('Prediction vs Actual Values')
