@@ -215,7 +215,7 @@ plt.plot(test_timestamps, dense_predictions, label='Dense Predicted', color='gre
 plt.scatter([custom_timestamp], [predicted_custom_value_lstm], color='red', label='LSTM Custom Prediction', zorder=5)
 plt.scatter([custom_timestamp], [predicted_custom_value_rnn], color='purple', label='RNN Custom Prediction', zorder=5)
 plt.scatter([custom_timestamp], [predicted_custom_value_dense], color='blue', label='Dense Custom Prediction', zorder=5)
-'''
+
 plt.text(
     0.02, 0.95, 
     f'LSTM Average Gap: {lstm_average_gap:.2f}', 
@@ -242,10 +242,35 @@ plt.text(
     verticalalignment='top',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
-'''
+
 plt.xlabel('Timestamp')
 plt.ylabel('Value')
 plt.title('Prediction vs Actual Values')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+# Ensure residuals (errors) for each model are calculated as 1D arrays
+lstm_errors = y_test - lstm_predictions.reshape(-1)
+rnn_errors = y_test - rnn_predictions.reshape(-1)
+dense_errors = y_test - dense_predictions.reshape(-1)
+
+# Check that test_timestamps matches the number of residuals
+if len(test_timestamps) != len(lstm_errors):
+    raise ValueError(f"Mismatch between number of timestamps ({len(test_timestamps)}) and errors ({len(lstm_errors)})")
+
+# Plot the errors (residuals) over time
+plt.figure(figsize=(14, 7))
+
+plt.plot(test_timestamps, lstm_errors, label='LSTM Error', color='blue')
+plt.plot(test_timestamps, rnn_errors, label='RNN Error', color='orange')
+plt.plot(test_timestamps, dense_errors, label='Dense Error', color='green')
+
+plt.axhline(0, color='black', linestyle='--')  # Add a horizontal line at y=0 for reference
+
+plt.xlabel('Timestamp')
+plt.ylabel('Error (Actual - Predicted)')
+plt.title('Prediction Errors Over Time')
 plt.legend()
 plt.grid(True)
 plt.show()
