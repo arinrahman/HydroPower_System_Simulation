@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, SimpleRNN, Dense, Dropout, Bidirectional
+from tensorflow.keras.layers import LSTM, SimpleRNN, Dense, Dropout, Bidirectional, Input
 from tensorflow.keras.optimizers import Adam
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 import os
@@ -16,20 +16,39 @@ amnistadRelease = 'DataSetExport-Discharge Total.Last-24-Hour-Change-in-Storage@
 data = Ingestor(amnistadRelease).data
 df = pd.DataFrame(data)
 
-# Convert 'Timestamp' to datetime and set as index
 df['Timestamp'] = pd.to_datetime(df['Timestamp'])
+# Ensure 'Timestamp' column is set as index
 df.set_index('Timestamp', inplace=True)
 
-# Scale data
-scaler = MinMaxScaler()
-scaled_data = scaler.fit_transform(df[['Value']])
+# Extract time-based features if index is DatetimeIndex
+if isinstance(df.index, pd.DatetimeIndex):
+    df['Year'] = df.index.year
+    df['Month'] = df.index.month
+    df['Day'] = df.index.day
+    df['Hour'] = df.index.hour
+    df['Minute'] = df.index.minute
+else:
+    raise TypeError("Index is not a DatetimeIndex. Please check the conversion of the 'Timestamp' column.")
 
-def create_sequences(data, seq_length):
-    sequences = []
-    for i in range(len(data) - seq_length):
-        sequence = data[i:i + seq_length + 1]
-        sequences.append(sequence)
-    return np.array(sequences)
+# Create a custom time-based feature To convert 
+df['CustomTimeFeature'] = (
+    df['Year'] * 10000 +         # Year * 10000 (e.g., 2024 -> 20240000)
+    df['Month'] * 100 +          # Month * 100 (e.g., 09 -> 900)
+    df['Day'] +                  # Day (e.g., 21)
+    df['Hour'] / 24 +            # Hour as a fraction of the day (e.g., 15 -> 0.625)
+    df['Minute'] / 1440          # Minute as a fraction of the day (e.g., 30 -> 0.0208)
+)
+
+# Scale the custom time feature
+scaler_time = MinMaxScaler()
+scaled_time_features = scaler_time.fit_transform(df[['CustomTimeFeature']])
+
+# Scale numerical values
+scaler_values = MinMaxScaler()
+scaled_values = scaler_values.fit_transform(df[['Value']])
+
+# Combine the scaled features
+combined_features = np.hstack([scaled_time_features, scaled_values])
 
 def predict_with_custom_value(timestamp, value, scaler, model, seq_length):
     timestamp = pd.to_datetime(timestamp)
@@ -47,25 +66,35 @@ def predict_with_custom_value(timestamp, value, scaler, model, seq_length):
     print(f"Prediction for the next time step after {timestamp} with input value {value}: {actual_prediction[0][0]}")
     return actual_prediction[0][0]
 
-def create_sequences_shift_left(data, seq_length, shift=1):
+def create_sequences_with_targets(data, seq_length):
     sequences = []
     targets = []
     
-    for i in range(len(data) - seq_length - shift):
-        sequence = data[i:i + seq_length]
-        target = data[i + seq_length - shift]  # Shift the target
+    # Loop through the data to create sequences
+    for i in range(seq_length - 1, len(data)):
+        # Extract the timestamp
+        timestamp = data[i][0]
+        
+        # Extract the current and prior values (seq_length total)
+        prior_values = [data[j][1:] for j in range(i - seq_length + 1, i + 1)]
+        
+        # Create a sequence where data[0] = timestamp and the rest are prior values
+        sequence = [timestamp] + [item for sublist in prior_values for item in sublist]
+        
+        # The target is the value at the current timestamp
+        target = data[i][1]
+        
         sequences.append(sequence)
         targets.append(target)
     
     return np.array(sequences), np.array(targets)
-
-
+    
 # Define sequence length and shift
-seq_length = 3
-shift = 1  # This will shift the target by one step to the left
+seq_length = 1
+shift = 1 
 
-# Create sequences with shifted target
-X, y = create_sequences_shift_left(scaled_data, seq_length, shift)
+# Create X and Y
+X,y = create_sequences_with_targets(combined_features, seq_length)
 
 # Split into train and test sets
 train_size = int(len(X) * 0.8)
@@ -73,12 +102,14 @@ X_train, y_train = X[:train_size], y[:train_size]
 X_test, y_test = X[train_size:], y[train_size:]
 
 # Reshape for LSTM, RNN, and Bidirectional RNN
-X_train = X_train.reshape((X_train.shape[0], X_train.shape[1], 1))
-X_test = X_test.reshape((X_test.shape[0], X_test.shape[1], 1))
+num_features = X_train.size // (X_train.shape[0] * seq_length)
+X_train = X_train.reshape((X_train.shape[0], seq_length + 1, 1))
+X_test = X_test.reshape((X_test.shape[0],seq_length + 1, 1))
 
 # Define and train LSTM model
 lstm_model = Sequential([
-    LSTM(50, return_sequences=True, input_shape=(seq_length, 1)),
+    Input(shape=(seq_length, 1)), 
+    LSTM(50, return_sequences=True),
     Dropout(0.2),
     LSTM(50),
     Dropout(0.2),
@@ -92,7 +123,8 @@ lstm_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_tes
 
 # Define and train RNN model
 rnn_model = Sequential([
-    SimpleRNN(50, return_sequences=True, input_shape=(seq_length, 1)),
+    Input(shape=(seq_length, 1)), 
+    SimpleRNN(50, return_sequences=True),
     Dropout(0.2),
     SimpleRNN(50),
     Dropout(0.2),
@@ -106,7 +138,8 @@ rnn_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test
 
 # Define and train Bidirectional RNN model
 bidirectional_rnn_model = Sequential([
-    Bidirectional(SimpleRNN(50, return_sequences=True), input_shape=(seq_length, 1)),
+    Input(shape=(seq_length, 1)),  
+    Bidirectional(SimpleRNN(50, return_sequences=True)),
     Dropout(0.2),
     Bidirectional(SimpleRNN(50)),
     Dropout(0.2),
@@ -118,13 +151,13 @@ bidirectional_rnn_model.compile(optimizer=bidirectional_rnn_optimizer, loss='mea
 
 bidirectional_rnn_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
 
-# Define and train Basic Neural Network model
 # Flatten X_train and X_test for Dense model
-X_train_dense = X_train.reshape((X_train.shape[0], -1))  # Flatten the sequence
+X_train_dense = X_train.reshape((X_train.shape[0], -1))
 X_test_dense = X_test.reshape((X_test.shape[0], -1))
 
 dense_model = Sequential([
-    Dense(64, activation='relu', input_shape=(X_train_dense.shape[1],)),
+    Input(shape=(X_train_dense.shape[1], )), 
+    Dense(64, activation='relu'),
     Dropout(0.2),
     Dense(32, activation='relu'),
     Dropout(0.2),
@@ -139,26 +172,31 @@ dense_model.fit(X_train_dense, y_train, epochs=75, batch_size=3, validation_data
 # Make predictions for the test set with LSTM model
 lstm_predictions = lstm_model.predict(X_test)
 lstm_predictions = lstm_predictions.reshape(-1, 1)
-lstm_predictions = scaler.inverse_transform(lstm_predictions)
+lstm_predictions = scaler_values.inverse_transform(lstm_predictions)
 
 # Make predictions for the test set with RNN model
 rnn_predictions = rnn_model.predict(X_test)
 rnn_predictions = rnn_predictions.reshape(-1, 1)
-rnn_predictions = scaler.inverse_transform(rnn_predictions)
+rnn_predictions = scaler_values.inverse_transform(rnn_predictions)
 
 # Make predictions for the test set with Bidirectional RNN model
 bidirectional_rnn_predictions = bidirectional_rnn_model.predict(X_test)
 bidirectional_rnn_predictions = bidirectional_rnn_predictions.reshape(-1, 1)
-bidirectional_rnn_predictions = scaler.inverse_transform(bidirectional_rnn_predictions)
+bidirectional_rnn_predictions = scaler_values.inverse_transform(bidirectional_rnn_predictions)
 
 # Make predictions for the test set with Dense model
 dense_predictions = dense_model.predict(X_test_dense)
 dense_predictions = dense_predictions.reshape(-1, 1)
-dense_predictions = scaler.inverse_transform(dense_predictions)
+dense_predictions = scaler_values.inverse_transform(dense_predictions)
 
 # Inverse transform y_test back to original values
-y_test = scaler.inverse_transform(y_test.reshape(-1, 1))
-
+#y_test = scaler_values.inverse_transform(y_test.reshape(-1, 1))
+y_test = scaler_values.inverse_transform(y_test.reshape(-1,1))
+print(f"y_test shape: {y_test.shape}")
+print(f"LSTM predictions shape: {lstm_predictions.shape}")
+print(f"RNN predictions shape: {rnn_predictions.shape}")
+print(f"Bidirectional RNN predictions shape: {bidirectional_rnn_predictions.shape}")
+print(f"Dense predictions shape: {dense_predictions.shape}")
 # Calculate and print metrics for LSTM model
 lstm_mse = mean_squared_error(y_test, lstm_predictions)
 print(f'LSTM Mean Squared Error: {lstm_mse}')
@@ -205,31 +243,9 @@ print(f'RNN Average Gap: {rnn_average_gap}')
 print(f'Bidirectional RNN Average Gap: {bidirectional_rnn_average_gap}')
 print(f'Dense Average Gap: {dense_average_gap}')
 
-# Custom prediction
-custom_timestamp = '2024-06-21 19:30:00'
-custom_value = 406.8
-predicted_custom_value_lstm = predict_with_custom_value(custom_timestamp, custom_value, scaler, lstm_model, seq_length)
-predicted_custom_value_rnn = predict_with_custom_value(custom_timestamp, custom_value, scaler, rnn_model, seq_length)
-predicted_custom_value_bidirectional_rnn = predict_with_custom_value(custom_timestamp, custom_value, scaler, bidirectional_rnn_model, seq_length)
-
-# Prepare input for Dense model
-# Use the last sequence and append the scaled custom value
-scaled_custom_value = scaler.transform(np.array([[custom_value]]))
-
-# Ensure the input is reshaped to match the Dense model's input shape
-custom_sequence_dense = np.append(scaled_data[-(seq_length - 1):], scaled_custom_value).reshape(1, -1)
-
-# Ensure correct input shape
-if custom_sequence_dense.shape[1] != X_train_dense.shape[1]:
-    raise ValueError(f"Expected input shape: {X_train_dense.shape[1]}, but got: {custom_sequence_dense.shape[1]}")
-
-predicted_custom_value_dense = dense_model.predict(custom_sequence_dense)
-predicted_custom_value_dense = scaler.inverse_transform(predicted_custom_value_dense)
-
-custom_timestamp = pd.to_datetime(custom_timestamp)
-
 # Plot results
-test_timestamps = df.index[train_size + seq_length + shift - 1 : train_size + seq_length + shift - 1 + len(y_test)]
+test_timestamps = df.index[train_size + (seq_length - 1):]
+
 y_test = y_test.reshape(-1)
 
 plt.figure(figsize=(14, 7))
@@ -265,7 +281,7 @@ plt.text(
     f'LSTM Average Gap: {lstm_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
-    verticalalignment='top',
+    verticalalignment='bottom',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
@@ -274,7 +290,7 @@ plt.text(
     f'RNN Average Gap: {rnn_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
-    verticalalignment='top',
+    verticalalignment='bottom',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
@@ -283,7 +299,7 @@ plt.text(
     f'Bidirectional RNN Average Gap: {bidirectional_rnn_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
-    verticalalignment='top',
+    verticalalignment='bottom',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
@@ -292,7 +308,7 @@ plt.text(
     f'Dense Average Gap: {dense_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
-    verticalalignment='top',
+    verticalalignment='bottom',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
@@ -301,7 +317,7 @@ plt.plot(test_timestamps, rnn_errors, label='RNN Error', color='orange')
 plt.plot(test_timestamps, bidirectional_rnn_errors, label='Bidirectional RNN Error', color='purple')
 plt.plot(test_timestamps, dense_errors, label='Dense Error', color='green')
 
-plt.axhline(0, color='black', linestyle='--')  # Add a horizontal line at y=0 for reference
+plt.axhline(0, color='black', linestyle='--')  # Add a horizontal line at x=0 for reference
 
 plt.xlabel('Timestamp')
 plt.ylabel('Error (Actual - Predicted)')
