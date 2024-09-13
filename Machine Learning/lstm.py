@@ -125,7 +125,7 @@ X_test = X_test.reshape((X_test.shape[0],seq_length + 1, 1))
 
 # Define and train LSTM model
 lstm_model = Sequential([
-    Input(shape=(seq_length, 1)), 
+    Input(shape=(seq_length + 1, 1)), 
     LSTM(50, return_sequences=True),
     Dropout(0.2),
     LSTM(50),
@@ -140,7 +140,7 @@ lstm_model.fit(X_train, y_train, epochs=100, batch_size=1, validation_data=(X_te
 
 # Define and train RNN model
 rnn_model = Sequential([
-    Input(shape=(seq_length, 1)), 
+    Input(shape=(seq_length + 1, 1)), 
     SimpleRNN(50, return_sequences=True),
     Dropout(0.2),
     SimpleRNN(50),
@@ -155,7 +155,7 @@ rnn_model.fit(X_train, y_train, epochs=100, batch_size=1, validation_data=(X_tes
 
 # Define and train Bidirectional RNN model
 bidirectional_rnn_model = Sequential([
-    Input(shape=(seq_length, 1)),  
+    Input(shape=(seq_length + 1, 1)),  
     Bidirectional(SimpleRNN(50, return_sequences=True)),
     Dropout(0.2),
     Bidirectional(SimpleRNN(50)),
