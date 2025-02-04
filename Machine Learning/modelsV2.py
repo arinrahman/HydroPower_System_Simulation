@@ -82,7 +82,7 @@ def create_sequences_with_targets(data, seq_length):
         # Extract the current and prior values (seq_length total)
         prior_values = [data[j] for j in range(i - seq_length, i)]
         
-        # Create a sequence where data[0] = timestamp and the rest are prior values
+        # Create a sequence where data[0] = timestamp and the rest are prior values 
         sequence = [timestamp] + [item for sublist in prior_values for item in sublist]
         
         sequences.append(sequence)
@@ -91,7 +91,7 @@ def create_sequences_with_targets(data, seq_length):
     return np.array(sequences), np.array(targets)
     
 # Define sequence length and shift
-seq_length = 3
+seq_length = 1
 shift = 1 
 
 # Create X and Y
@@ -122,7 +122,7 @@ lstm_model = Sequential([
 optimizer = Adam(learning_rate=0.001)
 lstm_model.compile(optimizer=optimizer, loss='mean_squared_error')
 
-lstm_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
+lstm_model.fit(X_train, y_train, epochs=75, batch_size=1, validation_data=(X_test, y_test))
 
 # Define and train RNN model
 rnn_model = Sequential([
@@ -137,7 +137,7 @@ rnn_model = Sequential([
 rnn_optimizer = Adam(learning_rate=0.001)
 rnn_model.compile(optimizer=rnn_optimizer, loss='mean_squared_error')
 
-rnn_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
+rnn_model.fit(X_train, y_train, epochs=75, batch_size=1, validation_data=(X_test, y_test))
 
 # Define and train Bidirectional RNN model
 bidirectional_rnn_model = Sequential([
@@ -152,7 +152,7 @@ bidirectional_rnn_model = Sequential([
 bidirectional_rnn_optimizer = Adam(learning_rate=0.001)
 bidirectional_rnn_model.compile(optimizer=bidirectional_rnn_optimizer, loss='mean_squared_error')
 
-bidirectional_rnn_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
+bidirectional_rnn_model.fit(X_train, y_train, epochs=75, batch_size=1, validation_data=(X_test, y_test))
 
 # Flatten X_train and X_test for Dense model
 X_train_dense = X_train.reshape((X_train.shape[0], -1))
@@ -170,7 +170,7 @@ dense_model = Sequential([
 dense_optimizer = Adam(learning_rate=0.001)
 dense_model.compile(optimizer=dense_optimizer, loss='mean_squared_error')
 
-dense_model.fit(X_train_dense, y_train, epochs=75, batch_size=3, validation_data=(X_test_dense, y_test))
+dense_model.fit(X_train_dense, y_train, epochs=75, batch_size=1, validation_data=(X_test_dense, y_test))
 
 # Make predictions for the test set with LSTM model
 lstm_predictions = lstm_model.predict(X_test)

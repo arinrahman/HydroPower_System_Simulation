@@ -79,7 +79,7 @@ def create_sequences_with_targets(data, seq_length):
         target = data[i][1]
         
         # Extract the prior values (seq_length total) before the current index
-        prior_values = [data[j][1:] for j in range(i - seq_length , i)]
+        prior_values = [data[j][1:] for j in range(i - seq_length  + 1, i + 1)]
         
         # Create a sequence where data[0] = timestamp and the rest are prior values
         sequence = [timestamp] + [item for sublist in prior_values for item in sublist]
@@ -89,8 +89,8 @@ def create_sequences_with_targets(data, seq_length):
     
     return np.array(sequences), np.array(targets)
     
-# Define sequence length and shift
-seq_length = 4
+# Define sequence length and shift = [['scaledTime', 'scaledValue']]
+seq_length = 1
 shift = 1 
 
 # Create X and Y
@@ -136,7 +136,7 @@ lstm_model = Sequential([
 optimizer = Adam(learning_rate=0.001)
 lstm_model.compile(optimizer=optimizer, loss='mean_squared_error')
 
-lstm_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
+lstm_model.fit(X_train, y_train, epochs=100, batch_size=1, validation_data=(X_test, y_test))
 
 # Define and train RNN model
 rnn_model = Sequential([
@@ -151,7 +151,7 @@ rnn_model = Sequential([
 rnn_optimizer = Adam(learning_rate=0.001)
 rnn_model.compile(optimizer=rnn_optimizer, loss='mean_squared_error')
 
-rnn_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
+rnn_model.fit(X_train, y_train, epochs=100, batch_size=1, validation_data=(X_test, y_test))
 
 # Define and train Bidirectional RNN model
 bidirectional_rnn_model = Sequential([
@@ -166,7 +166,7 @@ bidirectional_rnn_model = Sequential([
 bidirectional_rnn_optimizer = Adam(learning_rate=0.001)
 bidirectional_rnn_model.compile(optimizer=bidirectional_rnn_optimizer, loss='mean_squared_error')
 
-bidirectional_rnn_model.fit(X_train, y_train, epochs=75, batch_size=3, validation_data=(X_test, y_test))
+bidirectional_rnn_model.fit(X_train, y_train, epochs=100, batch_size=1, validation_data=(X_test, y_test))
 
 # Flatten X_train and X_test for Dense model
 X_train_dense = X_train.reshape((X_train.shape[0], -1))
@@ -184,7 +184,7 @@ dense_model = Sequential([
 dense_optimizer = Adam(learning_rate=0.001)
 dense_model.compile(optimizer=dense_optimizer, loss='mean_squared_error')
 
-dense_model.fit(X_train_dense, y_train, epochs=75, batch_size=3, validation_data=(X_test_dense, y_test))
+dense_model.fit(X_train_dense, y_train, epochs=100, batch_size=1, validation_data=(X_test_dense, y_test))
 
 # Make predictions for the test set with LSTM model
 lstm_predictions = lstm_model.predict(X_test)
@@ -295,38 +295,42 @@ if len(test_timestamps) != len(lstm_errors):
 plt.figure(figsize=(14, 7))
 
 plt.text(
-    0.02, 0.95, 
+    0.5, 0.95, 
     f'LSTM Average Gap: {lstm_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
-    verticalalignment='bottom',
+    verticalalignment='top',  # Aligns the top of the text to the y coordinate
+    horizontalalignment='center',  # Centers the text horizontally at x coordinate
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
 plt.text(
-    0.02, 0.90, 
+    0.5, 0.90, 
     f'RNN Average Gap: {rnn_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
-    verticalalignment='bottom',
+    verticalalignment='top',
+    horizontalalignment='center',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
 plt.text(
-    0.02, 0.85, 
+    0.5, 0.85, 
     f'Bidirectional RNN Average Gap: {bidirectional_rnn_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
-    verticalalignment='bottom',
+    verticalalignment='top',
+    horizontalalignment='center',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
 plt.text(
-    0.02, 0.80, 
+    0.5, 0.80, 
     f'Dense Average Gap: {dense_average_gap:.2f}', 
     transform=plt.gca().transAxes, 
     fontsize=12,
-    verticalalignment='bottom',
+    verticalalignment='top',
+    horizontalalignment='center',
     bbox=dict(boxstyle='round', facecolor='white', edgecolor='black')
 )
 
