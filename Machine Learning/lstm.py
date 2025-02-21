@@ -50,19 +50,26 @@ scaled_values = scaler_values.fit_transform(df[['Value']])
 # Combine the scaled features
 combined_features = np.hstack([scaled_time_features, scaled_values])
 
-def predict_with_custom_value(timestamp, value, scaler, model, seq_length):
+def predict_with_custom_value(timestamp, value, model, seq_length):
     timestamp = pd.to_datetime(timestamp)
-    
-    scaled_value = scaler.transform(np.array([[value]]))
 
-    last_sequence = scaled_data[-(seq_length - 1):]
+    custom_time_feature = (
+        timestamp.year * 10000 +        # Year * 10000 (e.g., 2024 -> 20240000)
+        timestamp.month * 100 +         # Month * 100 (e.g., 09 -> 900)
+        timestamp.day +                 # Day (e.g., 21)
+        timestamp.hour / 24 +           # Hour as a fraction of the day (e.g., 15 -> 0.625)
+        timestamp.minute / 1440         # Minute as a fraction of the day (e.g., 30 -> 0.0208)
+    )
 
-    custom_sequence = np.append(last_sequence, scaled_value).reshape((1, seq_length, 1))
+    scaled_value = scaler_values.transform(np.array([[value]]))
+
+    combined_features = np.array([[custom_time_feature, scaled_value[0][0]]])
+
+    custom_sequence = combined_features.reshape((1, seq_length + 1, 1)) 
 
     prediction = model.predict(custom_sequence)
-
-    actual_prediction = scaler.inverse_transform(prediction)
-    
+    prediction = prediction.reshape(-1, 1)
+    actual_prediction = abs(scaler_values.inverse_transform(prediction))
     print(f"Prediction for the next time step after {timestamp} with input value {value}: {actual_prediction[0][0]}")
     return actual_prediction[0][0]
 
@@ -95,7 +102,6 @@ shift = 1
 
 # Create X and Y
 X,y = create_sequences_with_targets(combined_features, seq_length)
-
 # Extract the custom time feature (first column) and values (second column)
 scaled_custom_time = X[:, 0]
 scaled_values_only = X[:, 1:]
@@ -137,6 +143,8 @@ optimizer = Adam(learning_rate=0.001)
 lstm_model.compile(optimizer=optimizer, loss='mean_squared_error')
 
 lstm_model.fit(X_train, y_train, epochs=100, batch_size=1, validation_data=(X_test, y_test))
+
+print(predict_with_custom_value("2024-06-15 00:45:00", 3522.6, lstm_model, 1))
 
 # Define and train RNN model
 rnn_model = Sequential([
