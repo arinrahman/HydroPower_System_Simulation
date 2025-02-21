@@ -1,3 +1,4 @@
+import heapq
 from Distribution import Distribution
 from HydroRelease import HydroRelease
 from SolarGeneration import SolarGeneration
@@ -16,7 +17,6 @@ energyDemand = 900
 time = 12
 
 panelEfficency = .9
-panelAmount = 5
 
 inflow = 1000
 waterReleased = 0
@@ -26,35 +26,49 @@ hydroWeight = .5
 solarWeight = .5
 '''
 hydroStored = 1000
-day1 = DayInfo(900,12,.9,5,1000,hydroStored,0,10,.5,.5)
-day2 = DayInfo(1000,9,.9,5,50,hydroStored,0,10,.5,.5)
+panelAmount = 5
+day1 = DayInfo(900,12,.9,panelAmount,1000,hydroStored,0,10,.5,.5)
+day2 = DayInfo(1000,9,.9,panelAmount,50,hydroStored,0,10,.5,.5)
 weekInfomation = [day1,day2]
+heapq.heapify(weekInfomation)
 # Min difference between actual and demand
 # Water rights are annual and some per month
 # General need however, 
 # Price varys hourly
 # Stabilization Attempts
-attempts = 0
-satisfies = False
-while attempts < 3 and not satisfies:
-    # Generate Distribution
-    distribution = Distribution(energyDemand, hydroWeight, solarWeight)
-    hydroDemand, solarDemand = distribution.calculateRequired()
+dayRelease = []
+while weekInfomation:
+    attempts = 0
+    satisfies = False
+    while attempts < 3 and not satisfies:
+        # Get Day Information
+        day = heapq.heappop(weekInfomation)
+        # Generate Distribution
+        distribution = Distribution(day.energyDemand, day.hydroWeight, day.solarWeight)
+        hydroDemand, solarDemand = distribution.calculateRequired()
 
-    # Determine System Generation Predictions
-    hydroRelease = HydroRelease(inflow, time, hydroStored)
-    waterReleased, hydroReleasePrediction = hydroRelease.releasePrediction()
-    solarRelease = SolarGeneration(panelAmount, panelEfficency, time)
-    solarGenerationPrediction = solarRelease.generatePrediction()
-    print(hydroReleasePrediction, solarGenerationPrediction)
+        # Determine System Generation Predictions
+        hydroRelease = HydroRelease(day.inflow, day.time, hydroStored)
+        waterReleased, hydroReleasePrediction = hydroRelease.releasePrediction()
+        solarRelease = SolarGeneration(panelAmount, day.panelEfficency, day.time)
+        solarGenerationPrediction = solarRelease.generatePrediction()
+        print(hydroReleasePrediction, solarGenerationPrediction)
 
-    # Evaluate
-    evaluator = Notification(energyDemand, hydroReleasePrediction, solarGenerationPrediction)
-    satisfies, hydroWeight, solarWeight = evaluator.evaulate(hydroWeight, solarWeight)
-    attempts += 1
+        # Evaluate
+        evaluator = Notification(day.energyDemand, hydroReleasePrediction, solarGenerationPrediction)
+        satisfies, hydroWeight, solarWeight = evaluator.evaluate(day.hydroWeight, day.solarWeight)
+        if satisfies:
+            dayRelease.append((day, waterReleased))
+        attempts += 1
+    if not satisfies:
+        heapq.heappush(weekInfomation, day)
+        break
+
 
 # Release System
-if satisfies:
+if not weekInfomation:
+    for day, waterReleased in dayRelease:
+        print("Day: ", day.time, "Water Released: ", waterReleased)
     hydroStored -= waterReleased
     print("System Met Required Demand")
 else:

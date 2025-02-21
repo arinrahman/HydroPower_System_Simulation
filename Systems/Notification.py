@@ -5,7 +5,7 @@ class Notification:
         self.hydroGen = hydroGen
         self.solarGen = solarGen
     
-    def evaulate(self, hydroWeight, solarWeight):
+    def evaluate(self, hydroWeight, solarWeight):
         totalGenerated = self.hydroGen + self.solarGen
         # If we meet required we release
         if totalGenerated >= self.required:
